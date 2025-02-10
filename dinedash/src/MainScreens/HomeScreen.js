@@ -20,7 +20,7 @@ const HomeScreen = ({navigation}) => {
         })
     }, [])
 
-    console.log('ye hai food Data', foodData)
+    // console.log('ye hai food Data', foodData)
 
     return (
         <View styles={styles.mainContainer}>
@@ -37,7 +37,7 @@ const HomeScreen = ({navigation}) => {
             
             <OffreSlider/>
 
-            <CardSlider navigation = {navigation}/>
+            <CardSlider navigation = {navigation} data= {foodData}/>
 
 
         </View>

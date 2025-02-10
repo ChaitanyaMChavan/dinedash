@@ -31,11 +31,10 @@ const CardSlider = ({ navigation, data }) => {
                                 <View style={styles.cardin2}>
                                     <Text style={styles.cardin2txt1}>Fast Food</Text>
                                     <Text style={styles.cardin2txt1}>Price -
-                                        <Text style={{ textDecorationLine: 'line-through' }}> Rs </Text>
 
                                         <Text> {item.FoodPrice}Rs</Text>
                                     </Text>
-                                    <Text style={styles.cardin2txt3}>VEG</Text>
+                                    <Text style={[styles.cardin2txt3,{backgroundColor:item.FoodType=="Veg"?"green":"red"}]}>{item.FoodType}</Text>
                                 </View>
                             </View>
                         </TouchableOpacity>
@@ -105,12 +104,13 @@ const styles = StyleSheet.create({
     cardin2txt3: {
         height: 20,
         borderRadius: 10,
-        backgroundColor: 'green',
         fontSize: 10,
         fontWeight: '500',
         color: 'white',
         textAlign: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 7
+        paddingHorizontal: 7,
+        textAlignVertical:"center",
+        textTransform:"capitalize"
     }
 })
