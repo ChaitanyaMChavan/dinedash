@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "844774401800",
+    "project_id": "dine-dash-3b4ba",
+    "storage_bucket": "dine-dash-3b4ba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:844774401800:android:ebef1e30b199d9e5a26ebd",
+        "android_client_info": {
+          "package_name": "com.dinedash"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpFzOSb3HOk6izBiYJtJss6BigDNGpXzM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
