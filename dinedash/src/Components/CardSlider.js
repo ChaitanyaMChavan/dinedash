@@ -1,105 +1,117 @@
-import { StyleSheet, Text, Touchable, TouchableOpacity, View, Image, ScrollView, FlatList, SafeAreaView } from 'react-native'
-import React from 'react'
+import { StyleSheet, Text, TouchableOpacity, View, Image, FlatList, SafeAreaView, Dimensions } from 'react-native';
+import React from 'react';
 
-const CardSlider = ({ navigation, data }) => {
+const { width } = Dimensions.get('window');
 
-    // console.log('Ye hai Cardslider ka Console', data)
+const CardSlider = ({ navigation, data, orientation = "horizontal" }) => {
 
+    // Navigate to ProductScreen
     const openProductHandler = (item) => {
-        navigation.navigate('ProductScreen', item)
-    }
+        navigation.navigate('ProductScreen', item);
+    };
+
     return (
         <View style={styles.container}>
-            <Text style={styles.cardouthead}>
-                Today's Special Food
-            </Text>
+            <Text style={styles.cardouthead}>Today's Special Food</Text>
             <SafeAreaView>
-
-                <FlatList style={styles.flatliststyle}
+                <FlatList
+                    style={styles.flatliststyle}
                     showsHorizontalScrollIndicator={false}
-                    horizontal
+                    horizontal={orientation === "horizontal"}
                     data={data}
+                    keyExtractor={(item) => item.id.toString()}  // ✅ Corrected keyExtractor
                     renderItem={({ item }) => (
-                        <TouchableOpacity key={item.index} style={styles.card} onPress={() => { openProductHandler(item) }}>
-                            <View>
-                                <Image source={{ uri: item.FoodImageUrl }} style={styles.cardimage} />
-                            </View>
+                        <TouchableOpacity
+                            style={[styles.card, orientation === "horizontal" ? styles.horizontalCard : styles.verticalCard]}
+                            onPress={() => openProductHandler(item)}
+                        >
+
+                            <Image
+                                source={{ uri: item.FoodImageUrl }}
+                                style={[orientation === "horizontal" ? styles.horizontalCardImage : styles.verticalCardImage]} // ✅ Improved conditional styling
+                            />
+
 
                             <View style={styles.cardin1}>
                                 <Text style={styles.cardin1txt}>{item.FoodName}</Text>
-
                                 <View style={styles.cardin2}>
                                     <Text style={styles.cardin2txt1}>Fast Food</Text>
-                                    <Text style={styles.cardin2txt1}>Price -
-
-                                        <Text> {item.FoodPrice}Rs</Text>
+                                    <Text style={styles.cardin2txt1}>
+                                        Price - <Text>{item.FoodPrice} Rs</Text>
                                     </Text>
-                                    <Text style={[styles.cardin2txt3,{backgroundColor:item.FoodType=="Veg"?"green":"red"}]}>{item.FoodType}</Text>
+                                    <Text style={[styles.cardin2txt3, { backgroundColor: item.FoodType === "Veg" ? "green" : "red" }]}>
+                                        {item.FoodType}
+                                    </Text>
                                 </View>
                             </View>
                         </TouchableOpacity>
                     )}
                 />
             </SafeAreaView>
-
         </View>
-    )
-}
+    );
+};
 
-export default CardSlider
+export default CardSlider;
 
 const styles = StyleSheet.create({
     container: {
         marginVertical: 10,
-        // backgroundColor: 'green',
-        paddingHorizontal: 5
+        paddingHorizontal: 5,
     },
     cardouthead: {
         fontSize: 16,
         fontWeight: '600',
         marginHorizontal: 10,
         paddingLeft: 5,
-        color: '#424242'
+        color: '#424242',
     },
-    cardimage: {
+    horizontalCardImage: {
         width: '100%',
-        height: 150,
+        height: '70%',  // ✅ Fixed height using screen width
         borderTopLeftRadius: 16,
-        borderTopRightRadius: 16 //17
-
+        borderTopRightRadius: 16,
+    },
+    verticalCardImage: {
+        width: '100%',
+        height: width * 0.56,  // ✅ Adjusted for better aspect ratio
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
     },
     card: {
-        width: 300,
-        height: 200,
+        borderRadius: 17,
+        backgroundColor: '#dedede',
+    },
+    
+    horizontalCard: {
+        width: width * 0.80,  // ✅ Fixed width for horizontal cards
+        height: width * 0.45, // ✅ Adjusted height
         marginLeft: 5,
         marginTop: 10,
-        borderRadius: 17, //18
-        backgroundColor: '#dedede',
-        // borderWidth: 1,
-        // borderColor: 'grey',
-        // elevation: 2
-
+    },
+    verticalCard: {
+        width: '100%',  // ✅ Full width for vertical cards
+        height: width * 0.7, // ✅ Adjusted for better height ratio
+        marginBottom:5
     },
     cardin1: {
-        // backgroundColor: 'red',
         marginHorizontal: 3,
-        marginTop: 3
+        marginTop: 3,
     },
     cardin1txt: {
         fontSize: 16,
         fontWeight: '600',
         marginHorizontal: 5,
-
     },
     cardin2: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginHorizontal: 6
+        marginHorizontal: 6,
     },
     cardin2txt1: {
         fontSize: 12,
         marginRight: 10,
-        fontWeight: '500'
+        fontWeight: '500',
     },
     cardin2txt3: {
         height: 20,
@@ -110,7 +122,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         justifyContent: 'center',
         paddingHorizontal: 7,
-        textAlignVertical:"center",
-        textTransform:"capitalize"
-    }
-})
+        textAlignVertical: 'center',
+        textTransform: 'capitalize',
+    },
+});

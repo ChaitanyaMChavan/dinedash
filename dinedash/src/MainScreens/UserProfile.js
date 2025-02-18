@@ -6,102 +6,134 @@ import { firebase } from '../Firebase/FirebaseConfig'
 import { AuthContext } from '../Context/AuthContext';
 
 const UserProfile = () => {
+  const { data1 } = useContext(AuthContext);  // Getting logged-in user details
+  const [userData, setUserData] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [updatedData, setUpdatedData] = useState({});
 
-  const { data1 } = useContext(AuthContext);
-
-  console.log('context Data', data1)
-
-  const handleData = async () => {
-    try {
-      const docref = firebase.firestore().collection('UserProfiles');
-      const doc1 = await docref.get();
-
-      if (!doc1.empty) {
-        doc1.forEach((doc) => {
-          const data = doc.data();
-          // console.log('ok Done 1', data);
-          // You can access the fields in 'data' now.
-        });
-      } else {
-        console.log('No documents found.');
-
-      }
-
-    } catch (error) {
-      console.log("error:", error)
-    }
-  }
   useEffect(() => {
-    handleData()
-  }, [])
+    if (data1?.uid) {
+      fetchUserProfile();
+    }
+  }, [data1]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const docRef = firebase.firestore().collection('UserProfiles').doc(data1.uid);
+      const docSnap = await docRef.get();
+
+      if (docSnap.exists) {
+        setUserData(docSnap.data());
+        setUpdatedData(docSnap.data());
+      } else {
+        console.log('No profile found for this user.');
+      }
+    } catch (error) {
+      console.log("Error fetching profile:", error);
+    }
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      const docRef = firebase.firestore().collection('UserProfiles').doc(data1.uid);
+      await docRef.set(updatedData, { merge: true });
+      console.log(data1.uid)
+      setUserData(updatedData);
+      setIsEditing(false);
+      console.log('Profile updated successfully');
+    } catch (error) {
+      console.log('Error updating profile:', error);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setUpdatedData(prev => ({ ...prev, [field]: value }));
+  };
 
   return (
-
     <View style={styles.container}>
-      <View style={{ backgroundColor: '#FF3F00', paddingVertical: 15, paddingHorizontal: 15, marginTop: 30 }}>
-        <Text style={{ Color: 'white' }}>My Profile</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>My Profile</Text>
       </View>
 
       <View style={styles.container_Inputfield}>
-        <FontAwesome5 name="user-alt" size={20} color="#ccc" style={{ paddingLeft: 5, paddingTop: 7 }} />
+        <FontAwesome5 name="user-alt" size={20} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
-          placeholder='Full Name'
-          value={'PNF'}
-          editable={false}
+          placeholder="Full Name"
+          value={updatedData?.fullName || ''}
+          onChangeText={(text) => handleChange('fullName', text)}
+          editable={isEditing}
+        />
+      </View>
+
+      {/* Display Email from Firebase Auth */}
+      <View style={styles.container_Inputfield}>
+        <Entypo name="email" size={21} color="#ccc" style={styles.icon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={data1?.email || 'No email available'}  // Get email from Firebase Auth
+          editable={false} // Email cannot be edited
         />
       </View>
 
       <View style={styles.container_Inputfield}>
-        <Entypo name="email" size={21} color="#ccc" style={{ paddingLeft: 3, paddingTop: 7 }} />
+        <Entypo name="address" size={21} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
-          placeholder='Email'
-          value={'PNF@gmail.com'}
-          editable={false}
+          placeholder="Address"
+          value={updatedData?.address || ''}
+          onChangeText={(text) => handleChange('address', text)}
+          editable={isEditing}
         />
       </View>
 
       <View style={styles.container_Inputfield}>
-        <Entypo name="address" size={21} color="#ccc" style={{ paddingLeft: 3, paddingTop: 7 }} />
+        <FontAwesome5 name="phone" size={20} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
-          placeholder='Address'
-          value={'New PNF Address'}
-          editable={false}
+          placeholder="Phone"
+          value={updatedData?.phone || ''}
+          onChangeText={(text) => handleChange('phone', text)}
+          editable={isEditing}
         />
       </View>
 
-      <View style={styles.container_Inputfield}>
-        <FontAwesome5 name="phone" size={20} color="#ccc" style={{ paddingLeft: 5, paddingTop: 7 }} />
-        <TextInput
-          style={styles.input}
-          placeholder='Phone'
-          value={'9876543210'}
-          editable={false}
-        />
-      </View>
-
-      <TouchableOpacity style={styles.button} >
-        <Text style={styles.buttonTxt}>Edit Profile</Text>
-      </TouchableOpacity>
+      {isEditing ? (
+        <TouchableOpacity style={styles.button} onPress={handleSave}>
+          <Text style={styles.buttonTxt}>Save Profile</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={styles.button} onPress={handleEdit}>
+          <Text style={styles.buttonTxt}>Edit Profile</Text>
+        </TouchableOpacity>
+      )}
     </View>
-  )
-}
+  );
+};
 
-export default UserProfile
+export default UserProfile;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // padding: 16,
     backgroundColor: '#fff'
   },
-  container_In: {
+  header: {
     backgroundColor: '#FF3F00',
     paddingVertical: 15,
     paddingHorizontal: 15,
     marginTop: 30
+  },
+  headerText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold'
   },
   container_Inputfield: {
     flexDirection: 'row',
@@ -111,10 +143,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 10,
     marginTop: 10,
-    marginHorizontal: 16
+    marginHorizontal: 16,
+    alignItems: 'center'
   },
   input: {
-    paddingLeft: 7
+    flex: 1,
+    paddingLeft: 10,
+    color: '#000'
+  },
+  icon: {
+    paddingLeft: 5
   },
   button: {
     backgroundColor: '#FF3F00',
@@ -129,6 +167,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: 'white',
-    alignSelf: 'center'
+    textAlign: 'center'
   }
-})
+});

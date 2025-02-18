@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../Context/AuthContext'
 import { firebase } from '../Firebase/FirebaseConfig'
 import { useFocusEffect } from '@react-navigation/native'
+import {HomeScreen} from '../MainScreens/HomeScreen'
 
 const UserCartScreen = ({ navigation }) => {
     const { userloggeduid } = useContext(AuthContext)
@@ -214,7 +215,7 @@ const UserCartScreen = ({ navigation }) => {
         const orderitemstabledoc = firebase.firestore().collection('OrderItems').doc(docid)
 
 
-        await addingSomedata(docid, cDate);
+         addingSomedata(docid, cDate);
 
         if (updatedCartData !== null) {
             try {
@@ -226,12 +227,12 @@ const UserCartScreen = ({ navigation }) => {
                     orderdate: new Date().getTime().toString(),
                     userid: userloggeduid,
                     userpayment: 'COD',
-                    paymenttotal: ''
+                    paymenttotal: totalCost
                 })
 
                 await deleteCart();
                 alert('Order placed successfully.');
-                navigation.navigate('HomeScreen');
+                navigation.navigate('Home');
             } catch (error) {
                 console.log('Error placing order:', error);
                 alert('Error placing order. Please try again.');
@@ -253,7 +254,7 @@ const UserCartScreen = ({ navigation }) => {
             <View style={styles.mainContainer}>
                 <View style={{ backgroundColor: '#FF3F00', paddingVertical: 15, paddingHorizontal: 15, marginTop: 30 }}>
 
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={() => navigation.goBack()}>
                         <Text style={{ fontSize: 16, color: 'white' }}>Close</Text>
                     </TouchableOpacity>
 
@@ -296,7 +297,7 @@ const UserCartScreen = ({ navigation }) => {
         <View style={styles.mainContainer}>
             <View style={{ backgroundColor: '#FF3F00', paddingVertical: 15, paddingHorizontal: 15, marginTop: 30 }}>
 
-                <TouchableOpacity onPress={() => { navigation.navigate('HomeScreen') }}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Text style={{ fontSize: 16, color: 'white' }}>Close</Text>
                 </TouchableOpacity>
 
@@ -351,7 +352,7 @@ const UserCartScreen = ({ navigation }) => {
                                             )
                                         }
                                     }
-                                />
+                                    nestedScrollEnabled={true} />
 
 
                         }

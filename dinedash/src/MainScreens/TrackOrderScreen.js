@@ -1,66 +1,89 @@
-import { StyleSheet, Text, View, TouchableOpacity, Image, ScrollView } from 'react-native'
-import React from 'react'
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useContext, useEffect, useState } from 'react'
+import { firebase } from '../Firebase/FirebaseConfig'
+import { AuthContext } from '../Context/AuthContext'
+import TrackOrderItems from '../Components/TrackOrderItems'
+import { FlatList } from 'react-native-gesture-handler'
 
-const TrackOrderScreen = () => {
+
+const TrackOrderScreen = ({ navigation }) => {
+  const { userloggeduid, } = useContext(AuthContext);
+
+  const [orders, setOrders] = useState([])
+  const [foodData, setFoodData] = useState([]);
+  const [foodDataAll, setFoodDataAll] = useState([]);
+
+
+
+  const getorders = async () => {
+    const ordersRef = firebase.firestore().collection('UserOrders').where('userid', '==', userloggeduid);
+
+    ordersRef.onSnapshot(snapshot => {
+      setOrders(snapshot.docs.map(doc => doc.data()))
+    })
+  }
+  useEffect(() => {
+    getorders()
+  }, [])
+
+  useEffect(() => {
+    // Fetch data from Firebase
+    const fetchData = async () => {
+      const foodRef = firebase.firestore().collection('OrderItems');
+
+      foodRef.onSnapshot(snapshot => {
+        setFoodData(snapshot.docs.map(doc => doc.data().cartItems))
+      }
+      )
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    // Fetch data from Firebase
+    const fetchData = async () => {
+      const foodRef = firebase.firestore().collection('FoodData');
+
+      foodRef.onSnapshot(snapshot => {
+        setFoodDataAll(snapshot.docs.map(doc => doc.data()))
+      }
+      )
+    };
+
+    fetchData();
+  }, []);
+
+
+  // console.log(' yha par dikat hai,', orders)
   return (
     <View style={styles.container}>
       <View style={{ backgroundColor: '#FF3F00', paddingVertical: 15, paddingHorizontal: 15, marginTop: 30 }}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+
           <Text style={{ color: 'white' }}>Close</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView>
-        <Text style={styles.mainHeading}>My Orders</Text>
-        <View style={styles.mainContainer}>
-          <Text style={styles.orderId}>Order id :4455545ad</Text>
-          <Text style={styles.orderTime}>Time : 4:10</Text>
 
-          <View style={styles.orderItemContainer}>
-            <View>
-              <Image source={require('../Images/pizza1.jpg')} style={styles.cardimage} />
-            </View>
+      <FlatList
+        data={orders}
+        keyExtractor={(item) => item.orderid} // Ensure unique keys
+        contentContainerStyle={{ paddingBottom: 100 }} // Prevents content clipping
+        ListHeaderComponent={() => <Text style={styles.mainHeading}>My Orders</Text>} // Header text
+        renderItem={({ item }) => (
+          <View style={styles.mainContainer}>
+            <Text style={styles.orderId}>Order id: {item.orderid.substring(0, 15)}</Text>
+            <Text style={styles.orderTime}>Time: 4:10 AM</Text>
 
-            <View style={styles.orderItemContainer_2}>
-              <View>
-                <Text style={styles.orderItemName}>Pizza</Text>
-                <Text style={styles.orderItemPrice} >150$</Text>
-                <Text>Qty : 1 unit</Text>
+            {/* Pass order ID to TrackOrderItems */}
+            <TrackOrderItems foodDataAll={foodDataAll} data={item.orderid} navigation={navigation} />
 
-              </View>
-            </View>
+            <Text style={styles.orderTotal}>Total: ${item.ordercost}</Text>
           </View>
-          <View style={styles.orderItemContainer}>
-            <View>
-              <Image source={require('../Images/pizza2.jpg')} style={styles.cardimage} />
-            </View>
+        )}
+      />
 
-            <View style={styles.orderItemContainer_2}>
-              <View>
-                <Text style={styles.orderItemName}>Pizza Samosa</Text>
-                <Text style={styles.orderItemPrice} >350$</Text>
-                <Text>Qty : 1 unit</Text>
-
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.orderItemContainer}>
-            <View>
-              <Image source={require('../Images/pizza3.jpg')} style={styles.cardimage} />
-            </View>
-
-            <View style={styles.orderItemContainer_2}>
-              <View>
-                <Text style={styles.orderItemName}>Pizza with no Pizza</Text>
-                <Text style={styles.orderItemPrice} >7000$</Text>
-                <Text>Qty : 1 unit</Text>
-              </View>
-            </View>
-          </View>
-          <Text style = {styles.orderTotal}>Total : 1800$</Text>
-        </View>
-      </ScrollView>
     </View>
   )
 }

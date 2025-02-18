@@ -10,6 +10,7 @@ import UserCartScreen from '../MainScreens/UserCartScreen';
 import TrackOrderScreen from '../MainScreens/TrackOrderScreen';
 import UserProfile from '../MainScreens/UserProfile';
 import AccountAndSettings from '../MainScreens/AccountAndSettings';
+import CategoryDetail from '../Components/CategoryDetail';
 
 
 
@@ -20,6 +21,7 @@ const HomeStack = () => (
         <Stack.Navigator>
             <Stack.Screen name="HomeScreen" component={HomeScreen} options={{ headerShown: false }} />
             <Stack.Screen name="ProductScreen" component={ProductScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="CategoryDetail" component={CategoryDetail} options={{ headerShown: false }} />
         </Stack.Navigator>
 )
 
