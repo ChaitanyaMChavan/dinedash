@@ -39,7 +39,7 @@ const CardSlider = ({ navigation, data, orientation = "horizontal" }) => {
                                     <Text style={styles.cardin2txt1}>
                                         Price - <Text>{item.FoodPrice} Rs</Text>
                                     </Text>
-                                    <Text style={[styles.cardin2txt3, { backgroundColor: item.FoodType === "Veg" ? "green" : "red" }]}>
+                                    <Text style={[styles.cardin2txt3, { backgroundColor: item.FoodType == "Veg" ? "green" : "red" }]}>
                                         {item.FoodType}
                                     </Text>
                                 </View>

@@ -1,8 +1,8 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import React, { useContext, useEffect, useState } from 'react'
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import Entypo from '@expo/vector-icons/Entypo';
-import { firebase } from '../Firebase/FirebaseConfig'
+import { firebase } from '../Firebase/FirebaseConfig';
 import { AuthContext } from '../Context/AuthContext';
 
 const UserProfile = () => {
@@ -10,26 +10,38 @@ const UserProfile = () => {
   const [userData, setUserData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [updatedData, setUpdatedData] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  // console.log("AuthContext Data:", data1);
 
   useEffect(() => {
-    if (data1?.uid) {
+    console.log(data1)
+    if (data1?.userloggeduid) {
+      console.log("Fetching profile for UID:", data1.userloggeduid);
       fetchUserProfile();
+    } else {
+      console.log("No user UID found.");
+      setLoading(false);  // Stop loading if no UID is found
     }
   }, [data1]);
 
   const fetchUserProfile = async () => {
     try {
-      const docRef = firebase.firestore().collection('UserProfiles').doc(data1.uid);
+      const docRef = firebase.firestore().collection('UserProfiles').doc(data1.userloggeduid);
       const docSnap = await docRef.get();
 
       if (docSnap.exists) {
-        setUserData(docSnap.data());
-        setUpdatedData(docSnap.data());
+        const data = docSnap.data();
+        console.log("Fetched Data:", data);
+        setUserData(data);
+        setUpdatedData(data);
       } else {
-        console.log('No profile found for this user.');
+        console.log("No profile found for this user.");
       }
     } catch (error) {
-      console.log("Error fetching profile:", error);
+      console.error("Error fetching profile:", error);
+    } finally {
+      setLoading(false); // Ensure loading stops
     }
   };
 
@@ -39,20 +51,28 @@ const UserProfile = () => {
 
   const handleSave = async () => {
     try {
-      const docRef = firebase.firestore().collection('UserProfiles').doc(data1.uid);
+      const docRef = firebase.firestore().collection('UserProfiles').doc(data1.userloggeduid);
       await docRef.set(updatedData, { merge: true });
-      console.log(data1.uid)
       setUserData(updatedData);
       setIsEditing(false);
-      console.log('Profile updated successfully');
+      console.log("Profile updated successfully");
     } catch (error) {
-      console.log('Error updating profile:', error);
+      console.error("Error updating profile:", error);
     }
   };
 
   const handleChange = (field, value) => {
     setUpdatedData(prev => ({ ...prev, [field]: value }));
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF3F00" />
+        <Text>Loading Profile...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -65,20 +85,20 @@ const UserProfile = () => {
         <TextInput
           style={styles.input}
           placeholder="Full Name"
-          value={updatedData?.fullName || ''}
-          onChangeText={(text) => handleChange('fullName', text)}
+          value={updatedData?.name || ''}
+          onChangeText={(text) => handleChange('name', text)}
           editable={isEditing}
         />
       </View>
 
-      {/* Display Email from Firebase Auth */}
       <View style={styles.container_Inputfield}>
         <Entypo name="email" size={21} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Email"
-          value={data1?.email || 'No email available'}  // Get email from Firebase Auth
-          editable={false} // Email cannot be edited
+          value={updatedData?.email || ''}
+          onChangeText={(text) => handleChange('email', text)}
+          editable={false}
         />
       </View>
 
@@ -168,5 +188,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'white',
     textAlign: 'center'
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   }
 });

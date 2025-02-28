@@ -25,8 +25,10 @@ const SignUpScreen = ({navigation}) => {
             await firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then((userCredentials) => {
                     const uid = userCredentials?.user.uid;
-                    userloggeduidHandler(uid)
+                    
+                    navigation.navigate('SignUpNext', { uid: uid })
                     console.log('Account Created Succesfully.')
+
                 })
         } catch (error) {
             console.log('somthing Error...',error)

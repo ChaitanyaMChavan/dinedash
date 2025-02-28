@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image, FlatList, ActivityIndicator, SafeAreaView } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View, Image, FlatList, ActivityIndicator, SafeAreaView, ScrollView } from 'react-native'
 import React, { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../Context/AuthContext'
 import { firebase } from '../Firebase/FirebaseConfig'
@@ -11,24 +11,22 @@ const UserCartScreen = ({ navigation }) => {
     const [cartdata, setCartdata] = useState(null)
     const [cartAlldata, setCartAlldata] = useState(null)
     const [foodDataAll, setFoodDataAll] = useState([])
+    const [itemDataAll, setitemDataAll] = useState([])
     const [ItemCost, setItemCost] = useState('0')
     const [totalCost, setTotalCost] = useState('0')
     const [deliveryCharges, setDeliveryCharges] = useState('0')
 
     const [paymentpage, setPaymentPage] = useState(false)
-
-
-
-
-
     const cardDataHandler = async () => {
 
         const docref = firebase.firestore().collection('UserCart').doc(userloggeduid);
-
+        console.log(userloggeduid)
         try {
             await docref.get().then((doc) => {
                 if (doc.exists) {
                     setCartdata(doc.data())
+                    // console.log(cartdata);
+                    
                     setCartAlldata(doc.data().cartItems)
                 }
                 else {
@@ -39,44 +37,35 @@ const UserCartScreen = ({ navigation }) => {
             console.log('Ye hai bo Error', error)
         }
     }
-
     useEffect(() => {
         cardDataHandler()
     }, [])
-
-
     const FoodDataHandler = async () => {
-
-
         const foodRef = firebase.firestore().collection('FoodData');
-
+    
         foodRef.onSnapshot(snapshot => {
-            setFoodDataAll(snapshot.docs.map(doc => doc.data()))
-        }
-        )
-
-    }
-
+            const foodData = snapshot.docs.map(doc => doc.data());
+    
+            setFoodDataAll(prevFoodData => [...foodData, ...prevFoodData]); // Appending new data to existing state
+        });
+    };
+    
+    const ItemDataHandler = async () => {
+        const itemsRef = firebase.firestore().collection('Items');
+    
+        itemsRef.onSnapshot(snapshot => {
+            const itemData = snapshot.docs.map(doc => doc.data());
+    
+            setFoodDataAll(prevFoodData => [...prevFoodData, ...itemData]); // Merging ItemData into FoodDataAll
+            console.log(foodDataAll)
+        });
+    };
+    
     useEffect(() => {
         FoodDataHandler()
+        ItemDataHandler()
     }, [])
 
-    // const TotalPriceHandler = () => {
-    //     if (cartdata !== null && Object.keys(cartdata).length !== 0) {
-
-    //         const cartDataforTotalPrice = cartAlldata;
-    //         let totalfoodprice = 0;
-
-    //         // const foodprice = cartDataforTotalPrice.cartItems
-    //         cartDataforTotalPrice.forEach((item) => {
-    //             totalfoodprice += (parseInt(item.totalFoodPrice))
-    //         })
-
-    //         setItemCost(totalfoodprice.toString())
-    //         setTotalCost(totalfoodprice.toString())
-
-    //     }
-    // }
     const TotalPriceHandler = () => {
         if (cartAlldata && cartAlldata.length > 0) {
             let totalfoodprice = cartAlldata.reduce((total, item) => total + item.totalFoodPrice,0);
@@ -97,40 +86,11 @@ const UserCartScreen = ({ navigation }) => {
     };
     
 
-    // useEffect(() => {
-    //     TotalPriceHandler()
-    // }, [cartAlldata])
-
     useEffect(() => {
         TotalPriceHandler();
     }, [cartAlldata, totalCost, ItemCost]);
     
-    // const DeleteButtonhandler = async (item) => {
-
-    //     console.log('ye hai 1')
-    //     const docref = firebase.firestore().collection('UserCart').doc(userloggeduid);
-
-    //     const docSnapshot = await docref.get();
-    //     const cartData = docSnapshot.data();
-
-    //     if (cartData && cartData.cartItems && cartData.cartItems.length === 1) {
-    //         await docref.update({
-    //             cartItems: firebase.firestore.FieldValue.delete()
-    //         })
-    //         console.log('ye hai 2')
-
-    //     }
-    //     else {
-    //         await docref.update({
-    //             cartItems: firebase.firestore.FieldValue.arrayRemove(item)
-    //         })
-    //         console.log('ye hai 3')
-
-    //     }
-    //     cardDataHandler()
-
-
-    // }
+   
     const DeleteButtonhandler = async (item) => {
         console.log('Deleting item:', item);
     
@@ -149,34 +109,23 @@ const UserCartScreen = ({ navigation }) => {
                     cartItems: firebase.firestore.FieldValue.arrayRemove(item),
                 });
             }
-    
             // **Reduce total cost dynamically**
             let newTotalCost = parseInt(totalCost) - (parseInt(item.FoodPrice) * item.FoodQuantity);
             setTotalCost(newTotalCost.toString());
-    
             let newItemCost = parseInt(ItemCost) - (parseInt(item.FoodPrice) * item.FoodQuantity);
             setItemCost(newItemCost.toString());
-    
             // Adjust delivery charges dynamically
             const deliveryCharge = newTotalCost > 500 ? 0 : 50;
             setDeliveryCharges(deliveryCharge.toString());
-    
             console.log('New Total Cost:', newTotalCost);
-    
             // Refresh cart data from Firestore
             cardDataHandler();
         }
     };
-    
-
-
     // console.log('Ye hai Data braso', ItemCost, totalCost,)
-
     const deleteCart = async () => {
         const docRef = firebase.firestore().collection('UserCart').doc(userloggeduid);
-
         const docSnapshot = await docRef.get();
-
         if (docSnapshot.exists) {
             await docRef.delete();
             console.log('Document successfully deleted.');
@@ -186,37 +135,24 @@ const UserCartScreen = ({ navigation }) => {
     };
 
     const [updatedCartData, setUpdatedCartData] = useState(null);
-
     const addingSomedata = (docid, date) => {
         if (cartdata !== null) {
-
             const updatedData = { ...cartdata };
-
-
             updatedData.cartItems.forEach((item) => {
                 item.orderId = docid;
                 item.orderDate = date;
             });
-
             // console.log('Updated cart data:', updatedData);
-
             setUpdatedCartData(updatedData);
         }
-
     }
-
     const PlaceNow = async () => {
-
         console.log('ye ho gya bhai')
         const cDate = new Date().getTime().toString()
         const docid = new Date().getTime().toString() + userloggeduid;
-
         const orderdatadoc = firebase.firestore().collection('UserOrders').doc(docid)
         const orderitemstabledoc = firebase.firestore().collection('OrderItems').doc(docid)
-
-
          addingSomedata(docid, cDate);
-
         if (updatedCartData !== null) {
             try {
                 await orderitemstabledoc.set({ ...updatedCartData });
@@ -224,12 +160,12 @@ const UserCartScreen = ({ navigation }) => {
                     orderid: docid,
                     orderstatus: 'Pending',
                     ordercost: totalCost,
-                    orderdate: new Date().getTime().toString(),
+                    orderdate: new Date().toLocaleDateString(),
+                    orderTime : new Date().toLocaleTimeString(),
                     userid: userloggeduid,
                     userpayment: 'COD',
                     paymenttotal: totalCost
                 })
-
                 await deleteCart();
                 alert('Order placed successfully.');
                 navigation.navigate('Home');
@@ -238,9 +174,7 @@ const UserCartScreen = ({ navigation }) => {
                 alert('Error placing order. Please try again.');
             }
         }
-
     }
-
     useFocusEffect(
         React.useCallback(() => {
             cardDataHandler();
@@ -248,31 +182,23 @@ const UserCartScreen = ({ navigation }) => {
             console.log('triggered cart')
         }, [])
     );
-
     if (paymentpage === true) {
         return (
             <View style={styles.mainContainer}>
                 <View style={{ backgroundColor: '#FF3F00', paddingVertical: 15, paddingHorizontal: 15, marginTop: 30 }}>
-
                     <TouchableOpacity onPress={() => navigation.goBack()}>
                         <Text style={{ fontSize: 16, color: 'white' }}>Close</Text>
                     </TouchableOpacity>
-
                 </View>
                 <View style={styles.container}>
-
                     <View>
                         <Text style={{ fontSize: 18, fontWeight: '600', paddingVertical: 10, paddingHorizontal: 15 }}>Payment Options</Text>
-
-
                         <TouchableOpacity style={{ backgroundColor: '#FF3F00', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10 }} onPress={() => { alert('Selected') }}>
                             <Text style={{ fontSize: 17, fontWeight: '500', color: 'white' }}>Cash on Delivery</Text>
                         </TouchableOpacity>
                     </View>
-
                     <View style={{ paddingBottom: 30 }}>
                         <Text style={{ fontSize: 18, fontWeight: '600', paddingVertical: 10, paddingHorizontal: 15 }}>Delivery Location</Text>
-
                         <TouchableOpacity style={{ backgroundColor: '#FF3F00', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10 }} onPress={() => { alert('Selected') }}>
                             <Text style={{ fontSize: 17, fontWeight: '500', color: 'white' }}>Current Location</Text>
                         </TouchableOpacity>
@@ -280,10 +206,7 @@ const UserCartScreen = ({ navigation }) => {
                             <Text style={{ fontSize: 17, fontWeight: '500', color: 'white' }}>Change Location</Text>
                         </TouchableOpacity>
                     </View>
-
                     <View style={{ paddingTop: 10, borderTopWidth: 1, borderColor: '#c9c9c9' }}>
-
-
                         <TouchableOpacity style={{ backgroundColor: '#FF3F00', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10, marginTop: 10, alignItems: 'center' }} onPress={() => PlaceNow() }>
                             <Text style={{ fontSize: 17, fontWeight: '500', color: 'white' }}>Place Order</Text>
                         </TouchableOpacity>
@@ -292,218 +215,240 @@ const UserCartScreen = ({ navigation }) => {
             </View>
         )
     }
-
     return (
         <View style={styles.mainContainer}>
-            <View style={{ backgroundColor: '#FF3F00', paddingVertical: 15, paddingHorizontal: 15, marginTop: 30 }}>
-
+            {/* Header */}
+            <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Text style={{ fontSize: 16, color: 'white' }}>Close</Text>
+                    <Text style={styles.closeText}>Close</Text>
                 </TouchableOpacity>
-
             </View>
-
-
-            <View style={styles.container}>
-                <SafeAreaView>
-
-
-                    <Text style={styles.containerHead}>My Cart</Text>
-
-
-                    <View style={styles.cartout}>
-                        {
-                            cartAlldata === null ?
-                                <Text style={{ marginHorizontal: 16, fontSize: 17, color: 'grey' }}>Your Cart is Empty!</Text>
-
-
-                                :
-                                <FlatList style={styles.FlatListCont} data={cartAlldata}
-                                    renderItem={
-
-                                        ({ item }) => {
-
-                                            const nData = foodDataAll.filter((items) => items.id === item.item_id)
-                                            // console.log('ye hai food data console', item)
-                                            return (
-                                                <View style={styles.containerCardList}>
-                                                    <View style={styles.containerCard}>
-                                                        <Image source={{ uri: nData[0].FoodImageUrl }} style={styles.cardimage} />
-                                                        <View style={styles.containerCard_in}>
-                                                            <View style={styles.containerCard_in1}>
-                                                                <Text >Mera Dhabha</Text>
-                                                            </View>
-
-                                                            <View style={styles.containerCard_in2}>
-                                                                <Text style={styles.containerCard_in2_itemName}>{nData[0].FoodName}</Text>
-                                                                <Text style={styles.containerCard_in2_itemPrice}>{nData[0].FoodPrice}₹ for one</Text>
-                                                                <Text style={styles.containerCard_in2_itemQty}>Quantity: {item.FoodQuantity}</Text>
-
-                                                            </View>
-
-                                                            <View style={styles.containerCard_in3}>
-                                                                <TouchableOpacity style={styles.containerCard_in3_btn} onPress={() => { DeleteButtonhandler(item) }}>
-                                                                    <Text style={styles.containerCard_in3_btn_txt}>Delete</Text>
-                                                                </TouchableOpacity>
-                                                            </View>
+    
+            <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+                <View style={styles.container}>
+                    <SafeAreaView>
+                        <Text style={styles.containerHead}>My Cart</Text>
+    
+                        <View style={styles.cartout}>
+                            {cartAlldata === null ? (
+                                <Text style={styles.emptyCartText}>Your Cart is Empty!</Text>
+                            ) : (
+                                <FlatList
+                                    style={styles.FlatListCont}
+                                    data={cartAlldata}
+                                    keyExtractor={(item) => item.item_id}
+                                    renderItem={({ item }) => {
+                                        const nData = 
+                                            foodDataAll.find((items) => items.id === item.item_id) ||
+                                            itemDataAll.find((items) => items.id === item.item_id);
+                                        
+                                        if (!nData) return null; // Prevent rendering if no data found
+    
+                                        return (
+                                            <View style={styles.containerCardList}>
+                                                <View style={styles.containerCard}>
+                                                    <Image source={{ uri: nData.FoodImageUrl }} style={styles.cardimage} />
+                                                    <View style={styles.containerCard_in}>
+                                                        <View style={styles.containerCard_in1}>
+                                                            <Text>Mera Dhabha</Text>
+                                                        </View>
+                                                        <View style={styles.containerCard_in2}>
+                                                            <Text style={styles.containerCard_in2_itemName}>{nData.FoodName}</Text>
+                                                            <Text style={styles.containerCard_in2_itemPrice}>{nData.FoodPrice}₹ for one</Text>
+                                                            <Text style={styles.containerCard_in2_itemQty}>Quantity: {item.FoodQuantity}</Text>
+                                                        </View>
+                                                        <View style={styles.containerCard_in3}>
+                                                            <TouchableOpacity 
+                                                                style={styles.containerCard_in3_btn} 
+                                                                onPress={() => DeleteButtonhandler(item)}
+                                                            >
+                                                                <Text style={styles.containerCard_in3_btn_txt}>Delete</Text>
+                                                            </TouchableOpacity>
                                                         </View>
                                                     </View>
                                                 </View>
-                                            )
-                                        }
-                                    }
-                                    nestedScrollEnabled={true} />
-
-
-                        }
-
-
-                    </View>
-
-
-                    {totalCost && totalCost !== '0' ?
-                        <>
-                            <View style={{ marginTop: 10 }}>
-                                <View style={{
-                                    backgroundColor: 'white',
-                                    borderColor: 'grey',
-                                    borderRadius: 15,
-                                    width: '95%',
-                                    alignSelf: 'center',
-                                    marginVertical: 5,
-                                    paddingVertical: 5,
-                                    elevation: 3
-                                }}>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '95%', alignSelf: 'center' }}>
-                                        <Text style={{ fontWeight: '600' }}>Item Cost:</Text>
-                                        <Text style={{ fontWeight: '600' }}>{ItemCost}₹</Text>
+                                            </View>
+                                        );
+                                    }}
+                                />
+                            )}
+                        </View>
+    
+                        {/* Total Cost Section */}
+                        {totalCost && totalCost !== '0' ? (
+                            <>
+                                <View style={{ marginTop: 10 }}>
+                                    <View style={styles.costContainer}>
+                                        <View style={styles.costRow}>
+                                            <Text style={styles.costLabel}>Item Cost:</Text>
+                                            <Text style={styles.costValue}>{ItemCost}₹</Text>
+                                        </View>
+                                        <View style={styles.costRow}>
+                                            <Text style={styles.costLabel}>Delivery Charges:</Text>
+                                            <Text>{deliveryCharges}₹</Text>
+                                        </View>
+                                        <View style={styles.costRow}>
+                                            <Text style={styles.costLabel}>Service Charges:</Text>
+                                            <Text>0₹</Text>
+                                        </View>
                                     </View>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '95%', alignSelf: 'center' }}>
-                                        <Text style={{ fontWeight: '600' }}>Delivery Charges:</Text>
-                                        <Text>{deliveryCharges}₹</Text>
-                                    </View>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '95%', alignSelf: 'center' }}>
-                                        <Text style={{ fontWeight: '500' }}>Service Charges:</Text>
-                                        <Text>0₹</Text>
-                                    </View>
-
                                 </View>
-                            </View>
-
-                            <View style={styles.btnCont}>
-                                <View style={{ flexDirection: 'row' }}>
-                                    <Text style={{ fontSize: 20, fontWeight: '600' }}>Total:</Text>
-                                    <Text style={{ fontSize: 20, fontWeight: '600', paddingLeft: 5 }}>{totalCost}₹</Text>
+    
+                                {/* Place Order Button */}
+                                <View style={styles.btnCont}>
+                                    <View style={{ flexDirection: 'row' }}>
+                                        <Text style={styles.totalLabel}>Total:</Text>
+                                        <Text style={styles.totalValue}>{totalCost}₹</Text>
+                                    </View>
+                                    <TouchableOpacity 
+                                        style={styles.placeOrderBtn} 
+                                        onPress={() => setPaymentPage(true)}
+                                    >
+                                        <Text style={styles.placeOrderText}>Place Order</Text>
+                                    </TouchableOpacity>
                                 </View>
-                                <TouchableOpacity style={{ backgroundColor: '#FF3F00', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }} onPress={() => setPaymentPage(true)}>
-                                    <Text style={{ fontSize: 17, fontWeight: '500', color: 'white' }}>Place Order</Text>
-                                </TouchableOpacity>
-
-                            </View>
-                        </>
-                        :
-                        null
-                    }
-
-                </SafeAreaView>
-
-
-            </View>
+                            </>
+                        ) : null}
+                    </SafeAreaView>
+                </View>
+            </ScrollView>
         </View>
-    )
+    );
 }
-
 export default UserCartScreen
-
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        width: '100%',
+    },
+    header: {
+        backgroundColor: '#FF3F00',
+        paddingVertical: 15,
+        paddingHorizontal: 15,
+        marginTop: 30,
+    },
+    closeText: {
+        fontSize: 16,
+        color: 'white',
     },
     container: {
         flex: 1,
-        backgroundColor: '#edeef0',
-        width: '100%',
+        paddingBottom: 20,
     },
     containerHead: {
-        fontSize: 25,
-        fontWeight: '600',
-        marginVertical: 5,
-        marginLeft: 5,
-        paddingHorizontal: 10,
+        fontSize: 22,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginVertical: 10,
+    },
+    cartout: {
+        marginHorizontal: 16,
+    },
+    emptyCartText: {
+        fontSize: 17,
+        color: 'grey',
+        textAlign: 'center',
+    },
+    FlatListCont: {
+        marginVertical: 10,
+    },
+    containerCardList: {
+        marginBottom: 10,
     },
     containerCard: {
         flexDirection: 'row',
         backgroundColor: 'white',
-        marginVertical: 5,
-        borderRadius: 25,
-        width: '95%',
-        alignSelf: 'center',
+        borderRadius: 20,
+        padding: 10,
         elevation: 2,
-        alignItems: 'center',
     },
     cardimage: {
-        width: 100,
-        height: '100%',
-        borderBottomLeftRadius: 25,
-        borderTopLeftRadius: 25
+        width: 90,
+        height: 80,
+        borderRadius: 15,
     },
     containerCard_in: {
-        flexDirection: 'column',
-        margin: 5,
-        width: '69%',
-        alignItems: 'flex-end',
+        flex: 1,
+        paddingLeft: 10,
     },
     containerCard_in1: {
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        width: '100%',
-        borderRadius: 10,
-        paddingHorizontal: 3,
-        paddingVertical: 2,
-        borderBottomWidth: 1,
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     containerCard_in2: {
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        width: '100%',
-        borderRadius: 10,
-        paddingHorizontal: 3,
-        paddingVertical: 2,
-    },
-    containerCard_in3: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        width: 100,
-        borderRadius: 20,
-        backgroundColor: '#edeef0',
         marginVertical: 5,
-        padding: 5,
-        elevation: 2
     },
     containerCard_in2_itemName: {
         fontSize: 16,
         fontWeight: 'bold',
-        marginBottom: 3
     },
     containerCard_in2_itemPrice: {
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 2
+        color: '#555',
     },
-    containerCard_in3_btn_txt: {
-        fontSize: 16,
+    containerCard_in2_itemQty: {
         fontWeight: 'bold',
     },
+    containerCard_in3: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    containerCard_in3_btn: {
+        backgroundColor: 'red',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 5,
+    },
+    containerCard_in3_btn_txt: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    costContainer: {
+        backgroundColor: 'white',
+        borderRadius: 15,
+        width: '95%',
+        alignSelf: 'center',
+        marginVertical: 5,
+        paddingVertical: 5,
+        elevation: 3,
+    },
+    costRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '95%',
+        alignSelf: 'center',
+        marginVertical: 3,
+    },
+    costLabel: {
+        fontWeight: '600',
+    },
+    costValue: {
+        fontWeight: '600',
+    },
     btnCont: {
-        width: '100%',
+        flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: 0,
-        flexDirection: 'row',
-        marginBottom: 80,
-        paddingTop: 10,
-        paddingHorizontal: 15,
-    }
-
-})
+        width: '95%',
+        alignSelf: 'center',
+        marginVertical: 10,
+    },
+    totalLabel: {
+        fontSize: 20,
+        fontWeight: '600',
+    },
+    totalValue: {
+        fontSize: 20,
+        fontWeight: '600',
+        paddingLeft: 5,
+    },
+    placeOrderBtn: {
+        backgroundColor: '#FF3F00',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 20,
+    },
+    placeOrderText: {
+        fontSize: 17,
+        fontWeight: '500',
+        color: 'white',
+    },
+});

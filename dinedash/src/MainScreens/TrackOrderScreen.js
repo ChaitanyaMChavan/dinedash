@@ -5,19 +5,14 @@ import { AuthContext } from '../Context/AuthContext'
 import TrackOrderItems from '../Components/TrackOrderItems'
 import { FlatList } from 'react-native-gesture-handler'
 
-
 const TrackOrderScreen = ({ navigation }) => {
   const { userloggeduid, } = useContext(AuthContext);
-
   const [orders, setOrders] = useState([])
   const [foodData, setFoodData] = useState([]);
   const [foodDataAll, setFoodDataAll] = useState([]);
-
-
-
+  const [itemDataAll, setitemDataAll] = useState([]);   
   const getorders = async () => {
     const ordersRef = firebase.firestore().collection('UserOrders').where('userid', '==', userloggeduid);
-
     ordersRef.onSnapshot(snapshot => {
       setOrders(snapshot.docs.map(doc => doc.data()))
     })
@@ -25,47 +20,45 @@ const TrackOrderScreen = ({ navigation }) => {
   useEffect(() => {
     getorders()
   }, [])
-
   useEffect(() => {
     // Fetch data from Firebase
     const fetchData = async () => {
       const foodRef = firebase.firestore().collection('OrderItems');
-
       foodRef.onSnapshot(snapshot => {
         setFoodData(snapshot.docs.map(doc => doc.data().cartItems))
       }
       )
     };
-
     fetchData();
   }, []);
-
   useEffect(() => {
     // Fetch data from Firebase
     const fetchData = async () => {
       const foodRef = firebase.firestore().collection('FoodData');
-
+      const itemsRef = firebase.firestore().collection('Items');
+  
+      // Fetch Items collection
+      itemsRef.onSnapshot(snapshot => {
+        setitemDataAll(snapshot.docs.map(doc => doc.data()));
+      });
+  
+      // Fetch FoodData collection
       foodRef.onSnapshot(snapshot => {
-        setFoodDataAll(snapshot.docs.map(doc => doc.data()))
-      }
-      )
+        setFoodDataAll(snapshot.docs.map(doc => doc.data()));
+      });
     };
-
+  
     fetchData();
   }, []);
-
-
+  
   // console.log(' yha par dikat hai,', orders)
   return (
     <View style={styles.container}>
       <View style={{ backgroundColor: '#FF3F00', paddingVertical: 15, paddingHorizontal: 15, marginTop: 30 }}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-
           <Text style={{ color: 'white' }}>Close</Text>
         </TouchableOpacity>
       </View>
-
-
       <FlatList
         data={orders}
         keyExtractor={(item) => item.orderid} // Ensure unique keys
@@ -74,16 +67,14 @@ const TrackOrderScreen = ({ navigation }) => {
         renderItem={({ item }) => (
           <View style={styles.mainContainer}>
             <Text style={styles.orderId}>Order id: {item.orderid.substring(0, 15)}</Text>
-            <Text style={styles.orderTime}>Time: 4:10 AM</Text>
-
+            <Text style={styles.orderTime}>Date: {item.orderdate || "No date Available"}</Text>
+            <Text style={styles.orderTime}>Time: {item.orderTime || "No Time Available"}</Text>
             {/* Pass order ID to TrackOrderItems */}
-            <TrackOrderItems foodDataAll={foodDataAll} data={item.orderid} navigation={navigation} />
-
+            <TrackOrderItems foodDataAll={foodDataAll} itemDataAll ={itemDataAll} data={item.orderid} navigation={navigation} />
             <Text style={styles.orderTotal}>Total: ${item.ordercost}</Text>
           </View>
         )}
       />
-
     </View>
   )
 }
@@ -107,7 +98,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     backgroundColor: 'white',
     paddingVertical: 5,
-    borderRadius: 20
+    borderRadius: 20,
   },
   orderId: {
     fontSize: 16,

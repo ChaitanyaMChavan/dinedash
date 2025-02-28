@@ -7,8 +7,7 @@ const ProductScreen = ({ navigation, route }) => {
     const { userloggeduid } = useContext(AuthContext)
 
     const [quantity, setQuantity] = useState('1')
-    const data = route.params;
-
+    const data = route.params || {};
 
     // console.log('ye hai console, Product Screen0000', data)
 

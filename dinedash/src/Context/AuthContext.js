@@ -35,7 +35,7 @@ const AuthProvider = ({ children }) => {
     //   }, [])
 
     console.log('From Context (UID)', userloggeduid)
-    const data1 = 'Context Data1'
+    const data1 = { userloggeduid};
     return <AuthContext.Provider value={{ data1, userloggeduid, userloggeduidHandler , checkIsLogged}}>
         {children}
         {/* {!loading && children} */}

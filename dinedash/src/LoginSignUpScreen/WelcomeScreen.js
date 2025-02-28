@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF', // Background color
   },
   logo: {
-    width: "70%",
+    width: "80%",
     height: "70%",
     marginBottom: 20,
   },
