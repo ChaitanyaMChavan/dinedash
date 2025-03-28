@@ -185,7 +185,7 @@ const UserCartScreen = ({ navigation }) => {
     if (paymentpage === true) {
         return (
             <View style={styles.mainContainer}>
-                <View style={{ backgroundColor: '#FF3F00', paddingVertical: 15, paddingHorizontal: 15, marginTop: 30 }}>
+                <View style={{ backgroundColor: '#971013', paddingVertical: 15, paddingHorizontal: 15, marginTop: 30 }}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
                         <Text style={{ fontSize: 16, color: 'white' }}>Close</Text>
                     </TouchableOpacity>
@@ -193,21 +193,21 @@ const UserCartScreen = ({ navigation }) => {
                 <View style={styles.container}>
                     <View>
                         <Text style={{ fontSize: 18, fontWeight: '600', paddingVertical: 10, paddingHorizontal: 15 }}>Payment Options</Text>
-                        <TouchableOpacity style={{ backgroundColor: '#FF3F00', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10 }} onPress={() => { alert('Selected') }}>
+                        <TouchableOpacity style={{ backgroundColor: '#971013', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10 }} onPress={() => { alert('Selected') }}>
                             <Text style={{ fontSize: 17, fontWeight: '500', color: 'white' }}>Cash on Delivery</Text>
                         </TouchableOpacity>
                     </View>
                     <View style={{ paddingBottom: 30 }}>
                         <Text style={{ fontSize: 18, fontWeight: '600', paddingVertical: 10, paddingHorizontal: 15 }}>Delivery Location</Text>
-                        <TouchableOpacity style={{ backgroundColor: '#FF3F00', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10 }} onPress={() => { alert('Selected') }}>
+                        <TouchableOpacity style={{ backgroundColor: '#971013', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10 }} onPress={() => { alert('Selected') }}>
                             <Text style={{ fontSize: 17, fontWeight: '500', color: 'white' }}>Current Location</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={{ backgroundColor: '#FF3F00', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10, marginTop: 10 }} onPress={() => { alert('Selected') }}>
+                        <TouchableOpacity style={{ backgroundColor: '#971013', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10, marginTop: 10 }} onPress={() => { alert('Selected') }}>
                             <Text style={{ fontSize: 17, fontWeight: '500', color: 'white' }}>Change Location</Text>
                         </TouchableOpacity>
                     </View>
                     <View style={{ paddingTop: 10, borderTopWidth: 1, borderColor: '#c9c9c9' }}>
-                        <TouchableOpacity style={{ backgroundColor: '#FF3F00', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10, marginTop: 10, alignItems: 'center' }} onPress={() => PlaceNow() }>
+                        <TouchableOpacity style={{ backgroundColor: '#971013', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, marginHorizontal: 10, marginTop: 10, alignItems: 'center' }} onPress={() => PlaceNow() }>
                             <Text style={{ fontSize: 17, fontWeight: '500', color: 'white' }}>Place Order</Text>
                         </TouchableOpacity>
                     </View>
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        backgroundColor: '#FF3F00',
+        backgroundColor: '#971013',
         paddingVertical: 15,
         paddingHorizontal: 15,
         marginTop: 30,
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
         paddingLeft: 5,
     },
     placeOrderBtn: {
-        backgroundColor: '#FF3F00',
+        backgroundColor: '#971013',
         paddingHorizontal: 20,
         paddingVertical: 10,
         borderRadius: 20,

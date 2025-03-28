@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     header: {
-        backgroundColor: '#FF3F00',
+        backgroundColor: '#971013',
         paddingVertical: 15,
         paddingHorizontal: 15,
         marginTop: 30
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold'
     },
     button: {
-        backgroundColor: '#FF3F00',
+        backgroundColor: '#971013',
         borderRadius: 25,
         width: '92%',
         alignSelf: 'center',

@@ -11,6 +11,7 @@ import TrackOrderScreen from '../MainScreens/TrackOrderScreen';
 import UserProfile from '../MainScreens/UserProfile';
 import AccountAndSettings from '../MainScreens/AccountAndSettings';
 import CategoryDetail from '../Components/CategoryDetail';
+import FavoritesScreen from '../Components/FavoritesScreen';
 
 
 
@@ -24,7 +25,12 @@ const HomeStack = () => (
             <Stack.Screen name="CategoryDetail" component={CategoryDetail} options={{ headerShown: false }} />
         </Stack.Navigator>
 )
-
+const FavoriteStack = () => (  
+    <Stack.Navigator>
+        <Stack.Screen name="FavoriteScreen" component={FavoritesScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="ProductScreen" component={ProductScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
+)
 const AppStack = () => {
     return (
         <NavigationContainer>
@@ -39,8 +45,8 @@ const AppStack = () => {
                             iconName = 'home';
                         } else if (route.name === 'Profile') {
                             iconName = 'person';
-                        } else if (route.name === 'Settings') {
-                            iconName = 'settings';
+                        } else if (route.name === 'Favourite') {
+                            iconName = 'heart-sharp';
                         } else if (route.name === 'UserCart') {
                             iconName = 'cart';
                         } else if (route.name === 'TrackOrders') {
@@ -56,7 +62,7 @@ const AppStack = () => {
                 <Tab.Screen name="UserCart" component={UserCartScreen} options={{ headerShown: false }} />
                 <Tab.Screen name="Profile" component={UserProfile} options={{ headerShown: false }} />
                 <Tab.Screen name="TrackOrders" component={TrackOrderScreen} options={{ headerShown: false }} />
-                <Tab.Screen name="Settings" component={AccountAndSettings} options={{ headerShown: false }} />
+                <Tab.Screen name="Favourite" component={FavoriteStack} options={{ headerShown: false }} />
             </Tab.Navigator>
         </NavigationContainer>
     );

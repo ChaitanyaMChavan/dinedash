@@ -1,89 +1,92 @@
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React, { useContext, useEffect, useState } from 'react'
-import { firebase } from '../Firebase/FirebaseConfig'
-import { AuthContext } from '../Context/AuthContext'
-import TrackOrderItems from '../Components/TrackOrderItems'
-import { FlatList } from 'react-native-gesture-handler'
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, FlatList } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { firebase } from '../Firebase/FirebaseConfig';
+import { AuthContext } from '../Context/AuthContext';
+import TrackOrderItems from '../Components/TrackOrderItems';
 
 const TrackOrderScreen = ({ navigation }) => {
-  const { userloggeduid, } = useContext(AuthContext);
-  const [orders, setOrders] = useState([])
-  const [foodData, setFoodData] = useState([]);
+  const { userloggeduid } = useContext(AuthContext);
+  const [orders, setOrders] = useState([]);
   const [foodDataAll, setFoodDataAll] = useState([]);
-  const [itemDataAll, setitemDataAll] = useState([]);   
-  const getorders = async () => {
-    const ordersRef = firebase.firestore().collection('UserOrders').where('userid', '==', userloggeduid);
-    ordersRef.onSnapshot(snapshot => {
-      setOrders(snapshot.docs.map(doc => doc.data()))
-    })
-  }
+  const [itemDataAll, setItemDataAll] = useState([]);
+
+  /** ✅ Fetch Orders - Realtime Listener */
   useEffect(() => {
-    getorders()
-  }, [])
+    const ordersRef = firebase.firestore()
+      .collection('UserOrders')
+      .where('userid', '==', userloggeduid);
+
+    const unsubscribe = ordersRef.onSnapshot(snapshot => {
+      const orderList = snapshot.docs.map(doc => ({
+        id: doc.id,  // ✅ Ensure each order has a unique ID
+        ...doc.data()
+      }));
+      setOrders(orderList);
+    });
+
+    return () => unsubscribe(); // ✅ Unsubscribe on unmount
+  }, [userloggeduid]);
+
+  /** ✅ Fetch FoodData & Items - Combined Listener */
   useEffect(() => {
-    // Fetch data from Firebase
-    const fetchData = async () => {
-      const foodRef = firebase.firestore().collection('OrderItems');
-      foodRef.onSnapshot(snapshot => {
-        setFoodData(snapshot.docs.map(doc => doc.data().cartItems))
-      }
-      )
+    const foodRef = firebase.firestore().collection('FoodData');
+    const itemsRef = firebase.firestore().collection('Items');
+
+    const unsubscribeFood = foodRef.onSnapshot(snapshot => {
+      setFoodDataAll(snapshot.docs.map(doc => doc.data()));
+    });
+
+    const unsubscribeItems = itemsRef.onSnapshot(snapshot => {
+      setItemDataAll(snapshot.docs.map(doc => doc.data()));
+    });
+
+    return () => {
+      unsubscribeFood();
+      unsubscribeItems();
     };
-    fetchData();
   }, []);
-  useEffect(() => {
-    // Fetch data from Firebase
-    const fetchData = async () => {
-      const foodRef = firebase.firestore().collection('FoodData');
-      const itemsRef = firebase.firestore().collection('Items');
-  
-      // Fetch Items collection
-      itemsRef.onSnapshot(snapshot => {
-        setitemDataAll(snapshot.docs.map(doc => doc.data()));
-      });
-  
-      // Fetch FoodData collection
-      foodRef.onSnapshot(snapshot => {
-        setFoodDataAll(snapshot.docs.map(doc => doc.data()));
-      });
-    };
-  
-    fetchData();
-  }, []);
-  
-  // console.log(' yha par dikat hai,', orders)
+
   return (
     <View style={styles.container}>
-      <View style={{ backgroundColor: '#FF3F00', paddingVertical: 15, paddingHorizontal: 15, marginTop: 30 }}>
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={{ color: 'white' }}>Close</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Orders List */}
       <FlatList
         data={orders}
-        keyExtractor={(item) => item.orderid} // Ensure unique keys
-        contentContainerStyle={{ paddingBottom: 100 }} // Prevents content clipping
-        ListHeaderComponent={() => <Text style={styles.mainHeading}>My Orders</Text>} // Header text
+        keyExtractor={(item) => item.id || Math.random().toString()} // ✅ Ensure key is unique
+        contentContainerStyle={{ paddingBottom: 100 }} // Prevent content clipping
+        ListHeaderComponent={() => <Text style={styles.mainHeading}>My Orders</Text>}
         renderItem={({ item }) => (
           <View style={styles.mainContainer}>
-            <Text style={styles.orderId}>Order id: {item.orderid.substring(0, 15)}</Text>
-            <Text style={styles.orderTime}>Date: {item.orderdate || "No date Available"}</Text>
-            <Text style={styles.orderTime}>Time: {item.orderTime || "No Time Available"}</Text>
+            <Text style={styles.orderId}>Order ID: {item.id.substring(0, 15)}</Text>
+            <Text style={styles.orderTime}>Date: {item.orderdate || "No date available"}</Text>
+            <Text style={styles.orderTime}>Time: {item.orderTime || "No time available"}</Text>
             {/* Pass order ID to TrackOrderItems */}
-            <TrackOrderItems foodDataAll={foodDataAll} itemDataAll ={itemDataAll} data={item.orderid} navigation={navigation} />
-            <Text style={styles.orderTotal}>Total: ${item.ordercost}</Text>
+            <TrackOrderItems foodDataAll={foodDataAll} itemDataAll={itemDataAll} data={item.id} navigation={navigation} />
+            <Text style={styles.orderTotal}>Total: Rs{item.ordercost}</Text>
           </View>
         )}
       />
     </View>
-  )
-}
+  );
+};
 
-export default TrackOrderScreen
+export default TrackOrderScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1
+  },
+  header: {
+    backgroundColor: '#971013',
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    marginTop: 30
   },
   mainHeading: {
     fontSize: 20,
@@ -91,14 +94,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontWeight: '500'
   },
-
   mainContainer: {
     marginBottom: 10,
     marginHorizontal: 10,
     elevation: 2,
     backgroundColor: 'white',
     paddingVertical: 5,
-    borderRadius: 20,
+    borderRadius: 20
   },
   orderId: {
     fontSize: 16,
@@ -118,35 +120,5 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     marginRight: 20,
     fontWeight: '600'
-  },
-  orderItemContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'green',
-    marginVertical: 2,
-    width: '95%',
-    alignSelf: 'center',
-    borderRadius: 20,
-    backgroundColor: '#f2f2f2',
-    elevation: 2
-  },
-  cardimage: {
-    width: 90,
-    height: 80,
-    borderBottomLeftRadius: 20,
-    borderTopLeftRadius: 20
-  },
-  orderItemContainer_2: {
-    paddingHorizontal: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-
-  },
-  orderItemName: {
-    fontSize: 16,
-    fontWeight: '600'
-  },
-  orderItemPrice: {
-
   }
-
-})
+});

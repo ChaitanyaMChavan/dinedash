@@ -2,13 +2,14 @@ import { Image, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpa
 import React, { useContext, useState } from 'react'
 import { AuthContext } from '../Context/AuthContext'
 import { firebase } from '../Firebase/FirebaseConfig'
-
+import { AntDesign } from '@expo/vector-icons' // Import favorite icon
 const ProductScreen = ({ navigation, route }) => {
     const { userloggeduid } = useContext(AuthContext)
 
     const [quantity, setQuantity] = useState('1')
     const data = route.params || {};
-
+    const [isFavorite, setIsFavorite] = useState(false);
+    const favouriteRef = firebase.firestore().collection('Favourites');
     // console.log('ye hai console, Product Screen0000', data)
 
     if (route.params === undefined) {
@@ -16,6 +17,36 @@ const ProductScreen = ({ navigation, route }) => {
     }
 
 
+    const toggleFavorite = async () => {
+        try {
+            if (isFavorite) {
+                // Remove from favorites
+                const snapshot = await favouriteRef
+                    .where('userid', '==', userloggeduid)
+                    .where('item_id', '==', data.id)
+                    .get();
+
+                snapshot.forEach(doc => doc.ref.delete());
+                setIsFavorite(false);
+                alert('Removed from favorites');
+            } else {
+                // Add to favorites
+                await favouriteRef.add({
+                    item_id: data.id,
+                    userid: userloggeduid,
+                    FoodName: data.FoodName,
+                    FoodPrice: data.FoodPrice,
+                    FoodImageUrl: data.FoodImageUrl,
+                    FoodType: data.FoodType,
+                });
+                
+                setIsFavorite(true);
+                alert('Added to favorites');
+            }
+        } catch (error) {
+            console.error("Error updating favorites:", error);
+        }
+    };
 
     // console.log('ye hai bhai date', date)
 
@@ -28,7 +59,7 @@ const ProductScreen = ({ navigation, route }) => {
             FoodQuantity: parseInt(quantity, 10),
             userid: userloggeduid,
             cartItemId: date + userloggeduid,
-            totalFoodPrice: parseInt(data.FoodPrice) * parseInt(quantity), 
+            totalFoodPrice: parseInt(data.FoodPrice) * parseInt(quantity),
         }
 
         try {
@@ -94,8 +125,8 @@ const ProductScreen = ({ navigation, route }) => {
 
     return (
         <ScrollView style={styles.container}>
-            <StatusBar backgroundColor={'#FF3F00'} />
-            <View style={{ backgroundColor: '#FF3F00', paddingVertical: 15, paddingHorizontal: 15, height: 50, marginTop: 30 }}>
+            <StatusBar backgroundColor={'#971013'} />
+            <View style={{ backgroundColor: '#971013', paddingVertical: 15, paddingHorizontal: 15, height: 50, marginTop: 30 }}>
                 <TouchableOpacity style={{}} onPress={() => { navigation.navigate('HomeScreen') }}>
                     <Text style={{ color: 'white' }}>Close</Text>
                 </TouchableOpacity>
@@ -103,6 +134,11 @@ const ProductScreen = ({ navigation, route }) => {
             <View style={styles.containerIn}>
                 <View style={styles.containerIn1}>
                     <Image source={{ uri: data.FoodImageUrl }} style={styles.cardimage} />
+                    {/* Favorite Icon */}
+                    <TouchableOpacity onPress={toggleFavorite} style={styles.favoriteIcon}>
+                        <AntDesign name={isFavorite ? 'heart' : 'hearto'} size={30} color={isFavorite ? 'red' : 'gray'} />
+                    </TouchableOpacity>
+
                 </View>
 
                 <View style={styles.containerIn2}>
@@ -114,7 +150,7 @@ const ProductScreen = ({ navigation, route }) => {
                     <View style={styles.containerIn2_s2}>
                         <Text style={styles.containerIn2_s2_head}>About item</Text>
                         <Text style={styles.containerIn2_s2_description}>Best Food that is availble in our country</Text>
-                        <Text style={[styles.containerIn2_s2_veg,{backgroundColor:data.FoodType=="Veg"?"green":"red"}]}>{data.FoodType}</Text>
+                        <Text style={[styles.containerIn2_s2_veg, { backgroundColor: data.FoodType == "Veg" ? "green" : "red" }]}>{data.FoodType}</Text>
 
 
                     </View>
@@ -181,7 +217,15 @@ const styles = StyleSheet.create({
     cardimage: {
         width: '100%',
         height: '100%',
-
+    },
+    favoriteIcon: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'white',
+        padding: 5,
+        borderRadius: 20,
+        elevation: 5,
     },
     containerIn2: {
         width: '100%',
@@ -279,7 +323,7 @@ const styles = StyleSheet.create({
         margin: 10,
     },
     containerIn2_s4_QuantityCont_MinusText: {
-        backgroundColor: '#FF3F00',
+        backgroundColor: '#971013',
 
         alignItems: 'center',
         justifyContent: 'center',
@@ -303,7 +347,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     containerIn2_s4_QuantityCont_PlusText: {
-        backgroundColor: '#FF3F00',
+        backgroundColor: '#971013',
 
         alignItems: 'center',
         justifyContent: 'center',
@@ -317,7 +361,7 @@ const styles = StyleSheet.create({
     containerIn3_buybtn: {
         width: '90%',
         height: 50,
-        backgroundColor: '#FF3F00',
+        backgroundColor: '#971013',
         borderRadius: 25,
         alignItems: 'center',
         justifyContent: 'center',

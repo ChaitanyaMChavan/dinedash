@@ -1,149 +1,155 @@
-import { StyleSheet, Text, View, StatusBar, TextInput, TouchableOpacity } from 'react-native'
-import React, { useContext, useState } from 'react'
+import { StyleSheet, Text, View, StatusBar, TextInput, TouchableOpacity, Alert } from 'react-native';
+import React, { useContext, useState } from 'react';
 import { FontAwesome } from '@expo/vector-icons';
-import { firebase } from "../Firebase/FirebaseConfig";
+import CheckBox from '@react-native-community/checkbox';
+import { firebase } from '../Firebase/FirebaseConfig';
 import { AuthContext } from '../Context/AuthContext';
 
-
-const SignUpScreen = ({navigation}) => {
-
+const SignUpScreen = ({ navigation }) => {
     const { userloggeduidHandler } = useContext(AuthContext);
 
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [cpassword, setCPassword] = useState('')
-
-
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [cpassword, setCPassword] = useState('');
+    const [isChecked, setIsChecked] = useState(false);
 
     const createAccountHandler = async () => {
-        // if (!email || !password || cpassword) {
-        //     alert('Please fill the Fields!')
-        //     return;
-        // }
+        if (!email || !password || !cpassword) {
+            Alert.alert('Error', 'Please fill all fields.');
+            return;
+        }
+
+        if (password !== cpassword) {
+            Alert.alert('Error', 'Passwords do not match.');
+            return;
+        }
+
+        if (!isChecked) {
+            Alert.alert('Error', 'You must agree to the Terms & Privacy.');
+            return;
+        }
 
         try {
-            await firebase.auth().createUserWithEmailAndPassword(email, password)
-                .then((userCredentials) => {
-                    const uid = userCredentials?.user.uid;
-                    
-                    navigation.navigate('SignUpNext', { uid: uid })
-                    console.log('Account Created Succesfully.')
-
-                })
+            const userCredentials = await firebase.auth().createUserWithEmailAndPassword(email, password);
+            const uid = userCredentials?.user.uid;
+            Alert.alert('Success', 'Account created successfully!');
+            navigation.navigate('SignUpNext', { uid: uid });
         } catch (error) {
-            console.log('somthing Error...',error)
+            Alert.alert('Error', error.message || 'Something went wrong.');
         }
-    }
+    };
 
-  return (
-    <View style={styles.container}>
-    <StatusBar backgroundColor={'#FF3F00'} />
-    <View style={{ paddingVertical: 12, width: '95%', alignSelf: 'center', marginBottom: 10 }}>
-        <Text style={{ alignSelf: 'center', fontSize: 25, fontWeight: '700', }} >Sign up</Text>
-    </View>
+    return (
+        <View style={styles.container}>
+            <StatusBar backgroundColor={'#960e0e'} />
+            <View style={styles.topSection}>
+                <Text style={styles.title}>Let's</Text>
+                <Text style={styles.subtitle}>Create Your</Text>
+                <Text style={styles.subtitle}>Account</Text>
+            </View>
 
-    <View style={styles.inputCont}>
-        <FontAwesome name="user" size={24} color="grey" style={styles.icon} />
+            <View style={styles.formContainer}>
+                <View style={styles.inputCont}>
+                    <FontAwesome name="user" size={20} color="grey" style={styles.icon} />
+                    <TextInput placeholder='Full Name' style={styles.input} />
+                </View>
+                <View style={styles.inputCont}>
+                    <FontAwesome name="envelope" size={20} color="grey" style={styles.icon} />
+                    <TextInput placeholder='Email Address' keyboardType='email-address' style={styles.input} value={email} onChangeText={setEmail} />
+                </View>
+                <View style={styles.inputCont}>
+                    <FontAwesome name="lock" size={20} color="grey" style={styles.icon} />
+                    <TextInput placeholder='Password' style={styles.input} value={password} secureTextEntry onChangeText={setPassword} />
+                </View>
+                <View style={styles.inputCont}>
+                    <FontAwesome name="lock" size={20} color="grey" style={styles.icon} />
+                    <TextInput placeholder='Retype Password' style={styles.input} value={cpassword} secureTextEntry onChangeText={setCPassword} />
+                </View>
 
+                <View style={styles.checkboxContainer}>
+                    <CheckBox value={isChecked} onValueChange={setIsChecked} />
+                    <Text style={styles.checkboxText}>I agree to the <Text style={{ fontWeight: 'bold' , color: '#960e0e'}}>Terms & Privacy</Text></Text>
+                </View>
 
-        <TextInput
-            placeholder='Email'
-            keyboardType='email-address'
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-        />
-    </View>
-    <View style={styles.inputCont}>
-        <FontAwesome name="lock" size={24} color="grey" style={styles.icon} />
-
-        <TextInput
-            placeholder='Password'
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-        />
-    </View>
-    <View style={styles.inputCont}>
-        <FontAwesome name="lock" size={24} color="grey" style={styles.icon} />
-
-        <TextInput
-            placeholder='Confirm Password'
-            style={styles.input}
-            value={cpassword}
-            onChangeText={setCPassword}
-        />
-    </View>
-    <TouchableOpacity style={styles.loginbutton} onPress={() => createAccountHandler()}>
-        <Text style={styles.loginbuttonTxt}>Sign up</Text>
-    </TouchableOpacity>
-
-    <View style={{ marginTop: 15, width: '95%', alignSelf: 'center', flexDirection: 'row', justifyContent: 'space-between' }}>
-        <View style={{ paddingLeft: 10 }}>
-            <Text>Already have an account?</Text>
+                <TouchableOpacity style={styles.signupButton} onPress={createAccountHandler}>
+                    <Text style={styles.signupButtonText}>Sign Up</Text>
+                </TouchableOpacity>
+                
+                <Text style={styles.loginText}>Have an account? <Text style={styles.loginLink} onPress={() => navigation.navigate('Login')}>Log in</Text></Text>
+            </View>
         </View>
-        <View style={{
-            backgroundColor: '#FF3F00',
-            borderRadius: 25,
-            // width: '95%',
-            alignSelf: 'center',
-            padding: 10,
-            elevation: 2
-        }} >
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={{
-                    fontSize: 17,
-                    fontWeight: '600',
-                    color: 'white',
-                    alignSelf: 'center',
-                    paddingHorizontal: 10
-                }}>Login</Text>
-            </TouchableOpacity>
-        </View>
-    </View>
+    );
+};
 
-</View>
-  )
-}
-
-export default SignUpScreen
+export default SignUpScreen;
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        // backgroundColor: 'green',
-        width: '100%'
+        backgroundColor: 'white',
+    },
+    topSection: {
+        backgroundColor: '#960e0e',
+        borderBottomLeftRadius: 50,
+        borderBottomRightRadius: 50,
+        padding: 30,
+    },
+    title: {
+        color: 'white',
+        fontSize: 26,
+        fontWeight: '300',
+    },
+    subtitle: {
+        color: 'white',
+        fontSize: 28,
+        fontWeight: 'bold',
+    },
+    formContainer: {
+        padding: 20,
+        marginTop: 10,
     },
     inputCont: {
         flexDirection: 'row',
-        padding: 10,
-        borderColor: 'grey',
+        alignItems: 'center',
+        borderColor: '#960e0e',
         borderWidth: 1,
-        borderRadius: 25,
-        marginBottom: 10,
-        width: '95%',
-        alignSelf: 'center'
+        borderRadius: 30,
+        paddingHorizontal: 15,
+        marginBottom: 12,
     },
     icon: {
-        paddingHorizontal: 5
+        marginRight: 10,
     },
     input: {
-        paddingLeft: 5,
-        width: '90%'
+        flex: 1,
+        paddingVertical: 10,
     },
-    loginbutton: {
-        backgroundColor: '#FF3F00',
-        borderRadius: 25,
-        width: '95%',
-        alignSelf: 'center',
-        padding: 10,
-        elevation: 2
+    checkboxContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 10,
     },
-    loginbuttonTxt: {
-        fontSize: 17,
-        fontWeight: '600',
+    checkboxText: {
+        marginLeft: 10,
+    },
+    signupButton: {
+        backgroundColor: '#960e0e',
+        borderRadius: 30,
+        paddingVertical: 12,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    signupButtonText: {
+        fontSize: 18,
         color: 'white',
-        alignSelf: 'center'
-    }
-})
+        fontWeight: 'bold',
+    },
+    loginText: {
+        textAlign: 'center',
+        marginTop: 15,
+    },
+    loginLink: {
+        color: '#960e0e',
+        fontWeight: 'bold',
+    },
+});

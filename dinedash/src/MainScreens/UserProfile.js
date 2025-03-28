@@ -1,27 +1,28 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import {
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ImageBackground, Image, ActivityIndicator, Alert
+} from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import Entypo from '@expo/vector-icons/Entypo';
 import { firebase } from '../Firebase/FirebaseConfig';
 import { AuthContext } from '../Context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import FavoritesScreen from '../Components/FavoritesScreen';
 
 const UserProfile = () => {
-  const { data1 } = useContext(AuthContext);  // Getting logged-in user details
+  const { data1, userloggeduidHandler } = useContext(AuthContext);
+  const navigation = useNavigation();
   const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [updatedData, setUpdatedData] = useState({});
-  const [loading, setLoading] = useState(true);
-
-  // console.log("AuthContext Data:", data1);
 
   useEffect(() => {
-    console.log(data1)
     if (data1?.userloggeduid) {
-      console.log("Fetching profile for UID:", data1.userloggeduid);
       fetchUserProfile();
     } else {
-      console.log("No user UID found.");
-      setLoading(false);  // Stop loading if no UID is found
+      setLoading(false);
     }
   }, [data1]);
 
@@ -31,17 +32,13 @@ const UserProfile = () => {
       const docSnap = await docRef.get();
 
       if (docSnap.exists) {
-        const data = docSnap.data();
-        console.log("Fetched Data:", data);
-        setUserData(data);
-        setUpdatedData(data);
-      } else {
-        console.log("No profile found for this user.");
+        setUserData(docSnap.data());
+        setUpdatedData(docSnap.data()); // Initialize editable data
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
-      setLoading(false); // Ensure loading stops
+      setLoading(false);
     }
   };
 
@@ -51,24 +48,46 @@ const UserProfile = () => {
 
   const handleSave = async () => {
     try {
-      const docRef = firebase.firestore().collection('UserProfiles').doc(data1.userloggeduid);
-      await docRef.set(updatedData, { merge: true });
+      await firebase.firestore().collection('UserProfiles').doc(data1.userloggeduid).update(updatedData);
       setUserData(updatedData);
       setIsEditing(false);
-      console.log("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);
     }
   };
 
-  const handleChange = (field, value) => {
-    setUpdatedData(prev => ({ ...prev, [field]: value }));
+  const handleLogout = async () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('userloggeduid'); // Remove user ID from storage
+              await firebase.auth().signOut(); // Firebase logout
+              userloggeduidHandler(null); // Clear user state in context
+              navigation.navigate('Welcome'); // Redirect to Login screen
+            } catch (error) {
+              console.log("Logout Error:", error);
+              Alert.alert("Error", "Something went wrong while logging out.");
+            }
+          }
+        }
+      ]
+    );
   };
 
+ 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF3F00" />
+        <ActivityIndicator size="large" color="#971013" />
         <Text>Loading Profile...</Text>
       </View>
     );
@@ -76,63 +95,73 @@ const UserProfile = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>My Profile</Text>
-      </View>
+      <ImageBackground source={require('../../assets/fav1_deakil.jpg')} style={styles.backgroundImage}>
+        <View style={styles.overlay} />
+      </ImageBackground>
+      <View style={styles.profileContainer}>
+        <Image source={require('../../assets/icon.png')} style={styles.profileIcon} />
 
-      <View style={styles.container_Inputfield}>
-        <FontAwesome5 name="user-alt" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Full Name"
-          value={updatedData?.name || ''}
-          onChangeText={(text) => handleChange('name', text)}
-          editable={isEditing}
-        />
-      </View>
+        {/* Editable Name Field */}
+        {isEditing ? (
+          <TextInput
+            style={[styles.input, styles.profileNameInput]}
+            value={updatedData?.name}
+            onChangeText={(text) => setUpdatedData({ ...updatedData, name: text })}
+          />
+        ) : (
+          <Text style={styles.profileName}>{userData?.name || 'User'}</Text>
+        )}
 
-      <View style={styles.container_Inputfield}>
-        <Entypo name="email" size={21} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={updatedData?.email || ''}
-          onChangeText={(text) => handleChange('email', text)}
-          editable={false}
-        />
-      </View>
+        <View style={styles.profileDetails}>
+          {/* Editable Fields */}
+          {[
+            { label: 'Mobile number:', key: 'phone', keyboardType: 'phone-pad' },
+            { label: 'Email Address:', key: 'email', keyboardType: 'email-address' },
+            { label: 'Address:', key: 'address' },
+            { label: 'Date of Birth:', key: 'dob', placeholder: 'YYYY-MM-DD' },
+            { label: 'Gender:', key: 'gender', placeholder: 'Male/Female/Other' },
+          ].map(({ label, key, keyboardType, placeholder }) => (
+            <View key={key} style={styles.profileInfoContainer}>
+              <Text style={styles.profileLabel}>{label}</Text>
+              {isEditing ? (
+                <TextInput
+                  style={styles.input}
+                  value={updatedData?.[key] || ''}
+                  onChangeText={(text) => setUpdatedData({ ...updatedData, [key]: text })}
+                  keyboardType={keyboardType || 'default'}
+                  placeholder={placeholder || ''}
+                />
+              ) : (
+                <Text style={styles.profileInfo}>{userData?.[key] || 'N/A'}</Text>
+              )}
+            </View>
+          ))}
+        </View>
 
-      <View style={styles.container_Inputfield}>
-        <Entypo name="address" size={21} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Address"
-          value={updatedData?.address || ''}
-          onChangeText={(text) => handleChange('address', text)}
-          editable={isEditing}
-        />
-      </View>
+        <View style={styles.buttonContainer}>
+          {/* Edit / Save Button */}
+          {isEditing ? (
+            <TouchableOpacity style={styles.button} onPress={handleSave}>
+              <Text style={styles.buttonText}>
+                <FontAwesome5 name="save" size={16} /> Save Changes
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={handleEdit}>
+              <Text style={styles.buttonText}>
+                <FontAwesome5 name="edit" size={16} /> Edit Profile
+              </Text>
+            </TouchableOpacity>
+          )}
 
-      <View style={styles.container_Inputfield}>
-        <FontAwesome5 name="phone" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Phone"
-          value={updatedData?.phone || ''}
-          onChangeText={(text) => handleChange('phone', text)}
-          editable={isEditing}
-        />
+          {/* Logout Button */}
+          <TouchableOpacity style={styles.button} onPress={handleLogout}>
+            <Text style={styles.buttonText}>
+              <FontAwesome5 name="power-off" size={16} /> Log Out
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      {isEditing ? (
-        <TouchableOpacity style={styles.button} onPress={handleSave}>
-          <Text style={styles.buttonTxt}>Save Profile</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity style={styles.button} onPress={handleEdit}>
-          <Text style={styles.buttonTxt}>Edit Profile</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };
@@ -142,56 +171,86 @@ export default UserProfile;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor: 'white',
   },
-  header: {
-    backgroundColor: '#FF3F00',
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    marginTop: 30
+  backgroundImage: {
+    width: '100%',
+    height: '60%',
+    position: 'absolute',
+    top: 0,
+    resizeMode: 'cover',
   },
-  headerText: {
+  overlay: {
+    width: '100%',
+    height: '50%',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    position: 'absolute',
+    top: 0,
+  },
+  profileContainer: {
+    height: '100%',
+    backgroundColor: '#971013',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 20,
+    marginTop: '55%',
+    alignItems: 'center',
+  },
+  profileIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginTop: -70,
+  },
+  profileName: {
+    color: 'white',
+    fontSize: 30,
+    fontWeight: 'bold',
+    marginVertical: 10,
+  },
+  profileDetails: {
+    width: '85%',
+  },
+  profileInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  profileLabel: {
     color: 'white',
     fontSize: 18,
-    fontWeight: 'bold'
+    width: '40%',
   },
-  container_Inputfield: {
-    flexDirection: 'row',
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    marginTop: 10,
-    marginHorizontal: 16,
-    alignItems: 'center'
+  profileInfo: {
+    color: 'white',
+    fontSize: 18,
+    width: '55%',
+    textAlign: 'right',
   },
   input: {
-    flex: 1,
-    paddingLeft: 10,
-    color: '#000'
+    color: 'white',
+    fontSize: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: 'white',
+    width: '55%',
+    textAlign: 'right',
   },
-  icon: {
-    paddingLeft: 5
+  buttonContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 150,
   },
   button: {
-    backgroundColor: '#FF3F00',
-    borderRadius: 25,
-    width: '92%',
-    alignSelf: 'center',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    width: '90%',
     padding: 10,
-    elevation: 2,
-    marginTop: 10
+    marginTop: 20,
+    alignItems: 'center',
   },
-  buttonTxt: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: 'white',
-    textAlign: 'center'
+  buttonText: {
+    color: '#971013',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  }
 });

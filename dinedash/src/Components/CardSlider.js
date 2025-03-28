@@ -3,8 +3,7 @@ import React from 'react';
 
 const { width } = Dimensions.get('window');
 
-const CardSlider = ({ navigation, data, orientation = "horizontal" }) => {
-
+const CardSlider = ({ navigation, data }) => {
     // Navigate to ProductScreen
     const openProductHandler = (item) => {
         navigation.navigate('ProductScreen', item);
@@ -16,30 +15,33 @@ const CardSlider = ({ navigation, data, orientation = "horizontal" }) => {
             <SafeAreaView>
                 <FlatList
                     style={styles.flatliststyle}
-                    showsHorizontalScrollIndicator={false}
-                    horizontal={orientation === "horizontal"}
+                    showsVerticalScrollIndicator={false}  // ✅ Hide scrollbar for cleaner UI
                     data={data}
-                    keyExtractor={(item) => item.id.toString()}  // ✅ Corrected keyExtractor
+                    keyExtractor={(item) => item.id.toString()}
+                    contentContainerStyle={{ paddingBottom: 10 }} // ✅ Adds spacing at the bottom
                     renderItem={({ item }) => (
                         <TouchableOpacity
-                            style={[styles.card, orientation === "horizontal" ? styles.horizontalCard : styles.verticalCard]}
+                            style={styles.card}
                             onPress={() => openProductHandler(item)}
                         >
-
                             <Image
                                 source={{ uri: item.FoodImageUrl }}
-                                style={[orientation === "horizontal" ? styles.horizontalCardImage : styles.verticalCardImage]} // ✅ Improved conditional styling
+                                style={styles.cardImage}
                             />
 
-
-                            <View style={styles.cardin1}>
-                                <Text style={styles.cardin1txt}>{item.FoodName}</Text>
-                                <View style={styles.cardin2}>
-                                    <Text style={styles.cardin2txt1}>Fast Food</Text>
-                                    <Text style={styles.cardin2txt1}>
+                            <View style={styles.cardContent}>
+                                <Text style={styles.cardTitle}>{item.FoodName}</Text>
+                                <View style={styles.cardDetails}>
+                                    <Text style={styles.cardCategory}>Fast Food</Text>
+                                    <Text style={styles.cardPrice}>
                                         Price - <Text>{item.FoodPrice} Rs</Text>
                                     </Text>
-                                    <Text style={[styles.cardin2txt3, { backgroundColor: item.FoodType == "Veg" ? "green" : "red" }]}>
+                                    <Text
+                                        style={[
+                                            styles.foodTypeTag,
+                                            { backgroundColor: item.FoodType === "Veg" ? "green" : "red" }
+                                        ]}
+                                    >
                                         {item.FoodType}
                                     </Text>
                                 </View>
@@ -60,68 +62,61 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5,
     },
     cardouthead: {
-        fontSize: 16,
-        fontWeight: '600',
+        marginBottom: 10,
+        fontSize: 18,
+        fontWeight: 'bold',
         marginHorizontal: 10,
         paddingLeft: 5,
         color: '#424242',
     },
-    horizontalCardImage: {
+    flatliststyle: {
         width: '100%',
-        height: '70%',  // ✅ Fixed height using screen width
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-    },
-    verticalCardImage: {
-        width: '100%',
-        height: width * 0.56,  // ✅ Adjusted for better aspect ratio
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
     },
     card: {
-        borderRadius: 17,
-        backgroundColor: '#dedede',
+        borderRadius: 16,
+        backgroundColor: '#f5f5f5',
+        width: '100%',
+        marginBottom: 15,  // ✅ Space between vertical cards
+        overflow: 'hidden',
+        elevation: 2,
     },
-    
-    horizontalCard: {
-        width: width * 0.80,  // ✅ Fixed width for horizontal cards
-        height: width * 0.45, // ✅ Adjusted height
-        marginLeft: 5,
-        marginTop: 10,
+    cardImage: {
+        width: '100%',
+        height: width * 0.5,  // ✅ Adjusted aspect ratio for better display
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
     },
-    verticalCard: {
-        width: '100%',  // ✅ Full width for vertical cards
-        height: width * 0.7, // ✅ Adjusted for better height ratio
-        marginBottom:5
+    cardContent: {
+        padding: 10,
     },
-    cardin1: {
-        marginHorizontal: 3,
-        marginTop: 3,
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 5,
     },
-    cardin1txt: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginHorizontal: 5,
-    },
-    cardin2: {
+    cardDetails: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginHorizontal: 6,
+        justifyContent: 'space-between',
     },
-    cardin2txt1: {
-        fontSize: 12,
-        marginRight: 10,
+    cardCategory: {
+        fontSize: 14,
         fontWeight: '500',
+        color: '#666',
     },
-    cardin2txt3: {
-        height: 20,
+    cardPrice: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    foodTypeTag: {
+        height: 22,
         borderRadius: 10,
-        fontSize: 10,
-        fontWeight: '500',
+        fontSize: 12,
+        fontWeight: 'bold',
         color: 'white',
         textAlign: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 7,
+        paddingHorizontal: 10,
         textAlignVertical: 'center',
         textTransform: 'capitalize',
     },

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, TextInput, FlatList } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import Headerbar from '../Components/Headerbar';
@@ -10,17 +10,12 @@ import { firebase } from '../Firebase/FirebaseConfig';
 import * as Location from 'expo-location';
 
 const HomeScreen = ({ navigation }) => {
-    const [foodData, setFoodData] = useState([]);
-    const [locationName, setLocationName] = useState('Fetching...'); // Store location name
-
+    const [FoodData, setFoodData] = useState([]);
+    const [searchText, setSearchText] = useState('');
+    const [filteredData, setFilteredData] = useState([]);
+    
     const foodDataQry = firebase.firestore().collection('FoodData');
-
-    useEffect(() => {
-        foodDataQry.onSnapshot(snapshot => {
-            setFoodData(snapshot.docs.map(doc => doc.data()));
-        });
-    }, []);
-
+    const [locationName, setLocationName] = useState('Fetching...');
     const requestLocationPermission = async () => {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
@@ -35,16 +30,21 @@ const HomeScreen = ({ navigation }) => {
         requestLocationPermission();
     }, []);
 
+    useEffect(() => {
+        const unsubscribe = foodDataQry.onSnapshot(snapshot => {
+            const data = snapshot.docs.map(doc => doc.data());
+            setFoodData(data);
+            setFilteredData(data); // Initialize filteredData with full list
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    
     const getLocation = async () => {
         try {
-            const location = await Location.getCurrentPositionAsync({
-                accuracy: Location.Accuracy.Highest,
-            });
-
+            const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
             const { latitude, longitude } = location.coords;
-            console.log('Latitude:', latitude);
-            console.log('Longitude:', longitude);
-
             const locationName = await getLocationName(latitude, longitude);
             setLocationName(locationName || "Unknown Location");
         } catch (error) {
@@ -58,7 +58,7 @@ const HomeScreen = ({ navigation }) => {
             const geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
             if (geocode.length > 0) {
                 const { city, country } = geocode[0];
-                return city ? city : country; // Ensure city is not undefined
+                return city ? city : country;
             }
         } catch (error) {
             console.log('Error fetching location name:', error);
@@ -66,20 +66,46 @@ const HomeScreen = ({ navigation }) => {
         return null;
     };
 
+    // Handle search input change
+    const handleSearch = (text) => {
+        setSearchText(text);
+        if (!FoodData || FoodData.length === 0) return;
+
+        if (text.trim() === '') {
+            setFilteredData(FoodData);
+        } else {
+            const filtered = FoodData.filter(item =>
+                item?.FoodName?.toLowerCase()?.includes(text.toLowerCase()) // Safe check
+            );
+            setFilteredData(filtered);
+        }
+    };
+
+
     return (
         <View style={styles.mainContainer}>
-            <StatusBar backgroundColor={'#FF3F00'} />
-            {/* ✅ Pass location name as a prop */}
+            <StatusBar backgroundColor={'#971013'} />
             <Headerbar location={locationName} />
-            
-            <TouchableOpacity style={styles.searchbox}>
-                <AntDesign name="search1" size={24} color="black" style={{ color: '#FF3F00' }} />
-                <Text style={styles.input}>Search</Text>
-            </TouchableOpacity>
-            
-            <Categories />
-            <OffreSlider />
-            <CardSlider navigation={navigation} data={foodData}  />
+
+            {/* ✅ Active Search Bar */}
+            <View style={styles.searchbox}>
+                <AntDesign name="search1" size={24} color="#971013" />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Search food..."
+                    value={searchText}
+                    onChangeText={handleSearch}
+                    autoCapitalize="none"
+                />
+            </View>
+            {searchText=="" ?
+                (<View><Categories />
+                    <OffreSlider /></View>)
+                : ""}
+            {/* ✅ Updated CardSlider with filtered data */}
+            <View style={{ flex: 1, marginBottom: 20 }}>
+                <CardSlider navigation={navigation} data={filteredData} />
+            </View>
         </View>
     );
 };
@@ -106,136 +132,6 @@ const styles = StyleSheet.create({
         marginLeft: 10,
         width: '90%',
         fontSize: 16,
-        color: '#c4c4c4',
+        color: '#333',
     },
 });
-
-// import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-// import React, { useEffect, useState } from 'react'
-// import { StatusBar } from 'expo-status-bar'
-// import Headerbar from '../Components/Headerbar'
-// import AntDesign from '@expo/vector-icons/AntDesign';
-// import Categories from '../Components/Categories';
-// import OffreSlider from '../Components/OffreSlider';
-// import CardSlider from '../Components/CardSlider';
-// import { firebase } from '../Firebase/FirebaseConfig'
-// import * as Location from 'expo-location';
-
-// const HomeScreen = ({navigation}) => {
-//     const [foodData, setFoodData] = useState([])
-
-//     const foodDataQry = firebase.firestore().collection('FoodData')
-
-//     useEffect(() => {
-//         foodDataQry.onSnapshot(snapshot => {
-//             setFoodData(snapshot.docs.map(doc => doc.data()))
-//         })
-//     }, [])
-
-//     // console.log('ye hai food Data', foodData)
-
-
-//     const requestLocationPermission = async () => {
-       
-//         const { status } = await Location.requestForegroundPermissionsAsync();
-//         if (status !== 'granted') {
-//             console.log('Permission to access location was denied');
-//             return;
-//         }
-//         // Permission granted, continue with obtaining the location
-//         getLocation()
-
-//     };
-
-//     useEffect(() => {
-//         requestLocationPermission()
-//     },[])
-
-//     const getLocation = async () => {
-//         try {
-//           const location = await Location.getCurrentPositionAsync({});
-//           const { latitude, longitude } = location.coords;
-//           console.log('Latitude:', latitude);
-//           console.log('Longitude:', longitude);
-     
-//           const locationName = await getLocationName(latitude, longitude);
-//           console.log('This is the real name of the location:', locationName);
-  
-
-//           // Do something with the latitude and longitude values
-//         } catch (error) {
-//           console.log('Error getting location:', error);
-//         }
-//       };
-
-
-
-//       const getLocationName = async (latitude, longitude) => {
-//         try {
-//           const geocode = await Location.reverseGeocodeAsync({
-//             latitude,
-//             longitude
-//           });
-    
-//           if (geocode.length > 0) {
-//             const { city, country } = geocode[0];
-//             const locationName = city ? `${city}, ${country}` : country; // Ensure city is not undefined
-//             console.log('Location Name:', locationName);
-//             return locationName;
-//         }
-//         } catch (error) {
-//           console.log('Error fetching location name:', error);
-//         }
-    
-//         return null;
-//       };
-
-//     return (
-//         <View styles={styles.mainContainer}>
-//             <StatusBar backgroundColor={'#FF3F00'} />
-
-//             <Headerbar />
-
-//             <TouchableOpacity style={styles.searchbox}>
-//                 <AntDesign name="search1" size={24} color="black" style={{color:'#FF3F00'}} />
-//                 <Text style={styles.input}>Search</Text>
-//             </TouchableOpacity>
-
-//             <Categories />
-            
-//             <OffreSlider/>
-
-//             <CardSlider navigation = {navigation} data= {foodData}/>
-
-
-//         </View>
-//     )
-// }
-
-// export default HomeScreen
-
-// const styles = StyleSheet.create({
-//     mainContainer: {
-//         flex: 1,
-//         height: '100%'
-//     },
-//     searchbox: {
-//         flexDirection: 'row',
-//         width: '92%' ,
-//         backgroundColor: 'white',
-//         padding: 10,
-//         marginVertical: 10,
-//         alignSelf: 'center',
-//         borderRadius: 20,
-//         alignItems: 'center',
-//         elevation: 2,
-//     },
-//     input: {
-//         marginLeft: 10,
-//         width: '90%',
-//         fontSize: 16,
-//         color: '#c4c4c4',
-
-//     }
-
-// })
